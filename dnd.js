@@ -17,41 +17,47 @@ client.on("ready", () => {
 
 client.on("message", (message) => {
 
-        //Look at all messages except ones that come from the bot itself 
+    //Look at all messages except ones that come from the bot itself 
     if(message.author.username != "Archmage Corey")
         { 
+            //Check if message is invoking a command
             if (message.content.substring(0,1) == '~') {
+                //Split out arguments into an array
                 const args = message.content.slice(message.length).split(' ');
                 const command = args.shift().toLowerCase();
-
-                if(command === 'create')
-                {
-                    if(!args.length)
-                    {
-                        return(message.channel.send("You did not provide any arugments!"));
-                    }
-                    message.channel.send("Command: creation");
-                }
-                //createNewCharacter(message.author.username, )
                 
-
-                /*message.channel.send({embed: {
-                        color: 0xff0000,
-                        description: "A simple embed!"
-                    }});*/
-
+                //Command to create a new character
+                if(command === '~create')
+                {
+                    if(args.length != 8 && args.length != 0)
+                    {
+                        message.channel.send("You did not provide any arugments!");
+                    }
+                    else if(args.length == 0)
+                    {
+                        message.channel.send("***Command: ~create <name> <class> <health> <str> <dex> <con> <int> <image>***");
+                    }
+                    else
+                    {
+                        var tempCharacter = createNewCharacter(message.author, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+                        printCharacter(tempCharacter, message);
+                    }  
+                }
             }
-        }
-	
+        }	
 });
 
-
-function createNewCharacter(auth, n, h, str, dex, con, int, image)
+//Create new character object
+function createNewCharacter(auth, n, c, h, str, dex, con, int, img)
 {
-   var character =  {
+
+    var character =  {
        author: auth,
+       level: 1,
+       class: c,
        name: n,
-       health: h,
+       healthCurrent: h,
+       healthMax: h,
        str: str,
        dex: dex,
        con: con,
@@ -59,47 +65,31 @@ function createNewCharacter(auth, n, h, str, dex, con, int, image)
        image: img,
        inventory: []
    };
+
    return character;
 }
 
-function printCharacter()
+
+//Print given character card
+function printCharacter(character, message)
 {
     const embed = new Discord.RichEmbed()
-                  .setTitle("\t**Oxleav - LV: 2 Druid**")
-                  .setAuthor(message.author.username, message.author.avatarURL)
-                 .setDescription("**HP 4/10** ~ AC: 10 ~ Initiate: 1 ~ Speed: 30")
-                  /*
-                   * Alternatively, use "#00AE86", [0, 174, 134] or an integer number.
-                   */
-                  .setColor(0x00AE86)
+                  .setTitle("***" + character.name + " - LV: 1 " + character.class + "***")
+                  .setAuthor(character.author.username, character.author.avatarURL)
+                 .setDescription("**HP " + character.healthCurrent +"/" + character.healthMax + "** ~ AC: 10 ~ Initiate: 1 ~ Speed: 30")
+                
+                  .setColor(0x215dbc)
                   //.setDescription("This is the main body of text, it can hold 2048 characters.")
-                  .setFooter("This is the footer text, it can hold 2048 characters", "http://i.imgur.com/w1vhFSR.png")
-                  .setThumbnail("https://i.imgur.com/8Xc3n0E.png")
-                  /*
-                   * Takes a Date object, defaults to current date.
-                   */
-                  .setTimestamp()
-                  .addField("STR:", "10", true)
-                  .addField("DEX:", "15", true)
-                  .addField("CON:", "10", true)
-                  .addField("INT:", "10", true)
-                  .addField("WIS:", "10", true)
-                  .addField("CHA:", "10", true)
+                  .setFooter("Archmage Corey has conjured a new hero!", "http://ddragon.leagueoflegends.com/cdn/7.5.1/img/sticker/poro-laugh.png")
+                  .setThumbnail(character.image)
+                
+                  
+                  .addField("STR:", character.str, true)
+                  .addField("DEX:", character.dex, true)
+                  .addField("CON:", character.con, true)
+                  .addField("INT:", character.int, true)
                 .addField("***--------------INVENTORY--------------***", "```\nSack o' Coin\nGrandas Famous Pie```");
       message.channel.send({embed});   
 }
-
-
-function sendMessage(m)
-{
-	if(!(messages.length <= 0))
-    {
-        var rand = Math.floor((Math.random() * messages.length));
-        m.channel.send(messages[rand]);
-        //console.log(rand);
-        messages = [];
-    }
-}
-
 
 client.login(auth.token);
