@@ -21,9 +21,50 @@ client.on("message", (message) => {
     if(message.author.username != "Archmage Corey")
         { 
             if (message.content.substring(0,1) == '~') {
+                const args = message.content.slice(message.length).split(' ');
+                const command = args.shift().toLowerCase();
+
+                if(command === 'create')
+                {
+                    if(!args.length)
+                    {
+                        return(message.channel.send("You did not provide any arugments!"));
+                    }
+                    message.channel.send("Command: creation");
+                }
+                //createNewCharacter(message.author.username, )
                 
-                
-                const embed = new Discord.RichEmbed()
+
+                /*message.channel.send({embed: {
+                        color: 0xff0000,
+                        description: "A simple embed!"
+                    }});*/
+
+            }
+        }
+	
+});
+
+
+function createNewCharacter(auth, n, h, str, dex, con, int, image)
+{
+   var character =  {
+       author: auth,
+       name: n,
+       health: h,
+       str: str,
+       dex: dex,
+       con: con,
+       int: int,
+       image: img,
+       inventory: []
+   };
+   return character;
+}
+
+function printCharacter()
+{
+    const embed = new Discord.RichEmbed()
                   .setTitle("\t**Oxleav - LV: 2 Druid**")
                   .setAuthor(message.author.username, message.author.avatarURL)
                  .setDescription("**HP 4/10** ~ AC: 10 ~ Initiate: 1 ~ Speed: 30")
@@ -46,18 +87,7 @@ client.on("message", (message) => {
                   .addField("CHA:", "10", true)
                 .addField("***--------------INVENTORY--------------***", "```\nSack o' Coin\nGrandas Famous Pie```");
       message.channel.send({embed});   
-
-                /*message.channel.send({embed: {
-                        color: 0xff0000,
-                        description: "A simple embed!"
-                    }});*/
-
-            }
-        }
-	
-});
-
-
+}
 
 
 function sendMessage(m)
