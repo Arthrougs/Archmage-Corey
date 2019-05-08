@@ -1,20 +1,24 @@
 const Discord = require("discord.js");
+const mongoose = require('mongoose');
+const MongoClient = require('mongodb').MongoClient;
 const fs = require('fs');
 const client = new Discord.Client();
 
 let rawdata = fs.readFileSync('auth.json');
 let auth = JSON.parse(rawdata);
-var messages = []; 
 
+var url = "mongodb://192.168.1.25:27017/";
 
+var characterFetcher;
+
+//On Ready!
 client.on("ready", () => {
 	console.log("I am ready!");
     client.user.setPresence({ status: 'online', game: { name: 'Dugneons & Dragons' } });
 
 });
 
-
-
+//On Message!
 client.on("message", (message) => {
 
     //Look at all messages except ones that come from the bot itself 
@@ -40,8 +44,23 @@ client.on("message", (message) => {
                     else
                     {
                         var tempCharacter = createNewCharacter(message.author, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
-                        printCharacter(tempCharacter, message);
+                        //printCharacter(tempCharacter, message);
                     }  
+                }
+                else if(command === '~show')
+                {
+                    if(args.length != 1 && args.length != 0)
+                    {
+                        message.channel.send("You did not provide any arugments!");
+                    }
+                    else if(args.length == 0)
+                    {
+                        message.channel.send("***Command: ~show <character name>***");
+                    }
+                    else
+                    {
+                       fetchCharacter(message.author.id, args[0], function printStuff(){printCharacter(characterFetcher, message)});
+                    }
                 }
             }
         }	
@@ -52,7 +71,9 @@ function createNewCharacter(auth, n, c, h, str, dex, con, int, img)
 {
 
     var character =  {
-       author: auth,
+       authorUserName: auth.username,
+       authorAvatar: auth.avatarURL,
+       authorID: auth.id,
        level: 1,
        class: c,
        name: n,
@@ -66,17 +87,71 @@ function createNewCharacter(auth, n, c, h, str, dex, con, int, img)
        inventory: []
    };
 
+   saveCharacter(character);
    return character;
 }
 
+//Save Character info to mongodb
+function saveCharacter(character)
+{
+    MongoClient.connect(url, {useNewUrlParser: true }, function(err, db) {
+        if(err) throw err;
+        var dbo = db.db("RPGBot");
+        console.log(character.healthCurrent);
+        var myobj = {
+            authorUsername: character.authorUserName, 
+            authorAvatar: character.authorAvatar,
+            authorID: character.authorID,
+            level: character.level, 
+            class: character.class, 
+            name: character.name, 
+            currentHP: character.healthCurrent, 
+            maxHP: character.healthMax,
+            strength: character.str,
+            dexterity: character.dex,
+            constitution: character.con,
+            intelligence: character.int,
+            image: character.image 
+        };
+        dbo.collection("characters").insertOne(myobj, function(err, res){
+            if(err) throw err;
+            console.log("1 document inserted");
+            db.close();
+        });  
+    });
+}
+
+
+function fetchCharacter(ID, characterName, callback)
+{
+
+    MongoClient.connect(url, {useNewUrlParser: true }, function(err, db) {
+        if (err) throw err;
+        var dbo = db.db("RPGBot");
+        var query = { authorID: ID, name: characterName};
+        dbo.collection("characters").find(query).toArray(function(err, result) {
+            if (err) throw err;
+            characterFetcher =  result;
+            callback();
+            db.close();
+          });
+    });
+    
+}
+
+
+
 
 //Print given character card
-function printCharacter(character, message)
+function printCharacter(characterData, message)
 {
+    character = characterData[0];
+    if(typeof character == "undefined") return null;
+
     const embed = new Discord.RichEmbed()
                   .setTitle("***" + character.name + " - LV: 1 " + character.class + "***")
-                  .setAuthor(character.author.username, character.author.avatarURL)
-                 .setDescription("**HP " + character.healthCurrent +"/" + character.healthMax + "** ~ AC: 10 ~ Initiate: 1 ~ Speed: 30")
+                  .setAuthor(character.authorUserName, character.authorAvatar)
+                 .setDescription("**HP " + character.currentHP +"/" + character.maxHP + "** ~ AC: 10 ~ Initiate: 1 ~ Speed: 30")
                 
                   .setColor(0x215dbc)
                   //.setDescription("This is the main body of text, it can hold 2048 characters.")
@@ -84,12 +159,12 @@ function printCharacter(character, message)
                   .setThumbnail(character.image)
                 
                   
-                  .addField("STR:", character.str, true)
-                  .addField("DEX:", character.dex, true)
-                  .addField("CON:", character.con, true)
-                  .addField("INT:", character.int, true)
+                  .addField("STR:", character.strength, true)
+                  .addField("DEX:", character.dexterity, true)
+                  .addField("CON:", character.constitution, true)
+                  .addField("INT:", character.intelligence, true)
                 .addField("***--------------INVENTORY--------------***", "```\nSack o' Coin\nGrandas Famous Pie```");
-      message.channel.send({embed});   
+      message.channel.send({embed});
 }
 
 client.login(auth.token);
